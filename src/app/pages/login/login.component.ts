@@ -4,6 +4,17 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AppRoutes } from '../../app.routes.config';
 import { ToastComponent } from '../../components/toast/toast.component';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+
+/**
+ * Dieser Vertrag beschreibt genau, was wir vom Backend erwarten.
+ * Er muss exakt zu deinem Java 'LoginResponseDto' passen.
+ */
+interface LoginResponse {
+  token: string;
+  username: string;
+}
 
 @Component({
   selector: 'app-login',
@@ -19,6 +30,12 @@ export class LoginComponent {
   private router = inject(Router);
 
   /**
+   * Angular HttpClient Service
+   * @private
+   */
+  private http = inject(HttpClient); // NEU: HttpClient injizieren
+
+  /**
    * Signals for username and password input fields
    */
   readonly username = signal('');
@@ -28,15 +45,30 @@ export class LoginComponent {
 
   /**
    * Method for handling login
-   * TODO: ATTENTION HARDCODED CREDENTIALS ONLY FOR SCHOOL PRESENTATION PURPOSES IMPLEMENTED!!!
    */
   onLogin() {
-    console.log(this.username() + ' | ' + this.password());
-    if (this.username() === 'test' && this.password() === 'test') {
-      this.router.navigate([AppRoutes.BASE, 'dashboard']);
-    } else {
-      this.message.set('Ungültige Zugangsdaten. Bitte versuchen Sie es erneut.');
-    }
+    // 1. Wir bereiten das Paket für das Backend vor
+    const loginData = {
+      username: this.username(),
+      password: this.password(),
+    };
+
+    // 2. Wir rufen deinen neuen AuthController im Backend auf
+    this.http.post<LoginResponse>(`${environment.apiUrl}/auth/login`, loginData).subscribe({
+      next: response => {
+        // Wir speichern den Token und den Namen im LocalStorage des Browsers.
+        // So "merkt" sich der Browser, dass wir eingeloggt sind.
+        localStorage.setItem('openbis_token', response.token);
+        localStorage.setItem('username', response.username);
+        // Wir leiten den Benutzer zum Dashboard weiter
+        this.router.navigate([AppRoutes.BASE, 'dashboard']);
+      },
+      error: err => {
+        // FEHLER: Wenn z.B. das Passwort falsch war oder das Backend nicht läuft.
+        this.message.set('Login fehlgeschlagen. Bitte prüfen Sie Ihre Zugangsdaten.');
+        console.error('Login Error:', err);
+      },
+    });
   }
 
   /**
