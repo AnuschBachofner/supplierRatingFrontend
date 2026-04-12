@@ -60,7 +60,25 @@ src/app
 └── environments    // Configuration for Dev/Prod (API URLs, etc.)
 ```
 
-## 4. Contributing
+## 4. Authentication
+
+The application uses a **PAT-based login flow** connecting to openBIS.
+
+**How it works:**
+1. The user enters their openBIS **username** and **Personal Access Token (PAT)**
+   in the login form.
+2. These are sent to the Backend, which validates the PAT against openBIS.
+3. On success, the Backend returns the PAT as a Bearer token.
+4. The Frontend stores this token in memory and attaches it as
+   `Authorization: Bearer <PAT>` to every subsequent API request.
+
+**How to get a PAT:**
+- Log in to your openBIS instance
+- Go to your profile (top right corner) → **Personal Access Tokens**
+- Click **Create new token**, set an expiry date, and copy the generated token
+- Use this token together with your openBIS username to log in
+
+## 5. Contributing
 
 First off, thank you for considering contributing to the Supplier Rating Frontend! 🚀
 
@@ -93,5 +111,5 @@ To keep the codebase clean and maintainable, please keep the following in mind:
 
 Thank you for your support! ❤️
 
-## 5. License
+## 6. License
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
