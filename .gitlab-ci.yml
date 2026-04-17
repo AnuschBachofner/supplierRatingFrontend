@@ -1,0 +1,25 @@
+# GitLab CI Pipeline für das Backend
+# Baut ein Docker-Image mit Kaniko und pusht es in die GitLab Registry
+
+stages:
+  - build
+
+build-image:
+  stage: build
+
+  # Kaniko: kann Docker-Images bauen ohne Docker zu brauchen
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+
+  script:
+    # Image bauen und direkt in die Registry pushen
+    # Kaniko macht build + push in einem Schritt!
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --dockerfile $CI_PROJECT_DIR/Dockerfile
+      --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+
+  # Pipeline läuft nur wenn auf den main-Branch gepusht wird
+  only:
+    - main
