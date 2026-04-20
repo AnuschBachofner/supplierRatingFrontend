@@ -1,25 +1,48 @@
-# GitLab CI Pipeline für das Backend
-# Baut ein Docker-Image mit Kaniko und pusht es in die GitLab Registry
+# GitLab CI Pipeline für das Frontend
+# Station 1: Docker-Image bauen und in Registry pushen
+# Station 2: Image-Hash im Infrastructure-Repo aktualisieren
 
 stages:
   - build
+  - deploy
 
+# --- Station 1: Image bauen ---
 build-image:
   stage: build
-
-  # Kaniko: kann Docker-Images bauen ohne Docker zu brauchen
   image:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
-
   script:
-    # Image bauen und direkt in die Registry pushen
-    # Kaniko macht build + push in einem Schritt!
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --dockerfile $CI_PROJECT_DIR/Dockerfile
       --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  only:
+    - main
 
-  # Pipeline läuft nur wenn auf den main-Branch gepusht wird
+# --- Station 2: Infrastructure-Repo aktualisieren ---
+update-manifest:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    # Git installieren (Alpine hat es nicht vorinstalliert)
+    - apk add --no-cache git
+  script:
+    # 1. Infrastructure-Repo klonen
+    - git clone https://ci-push-token:${INFRA_PUSH_TOKEN}@gitlab.empa.ch/empa-scientific-it/supplier-rating-webapp/srs-infrastructure.git
+    - cd srs-infrastructure
+
+    # 2. Den alten Image-Hash durch den neuen ersetzen
+    #    sed = "stream editor" — sucht und ersetzt Text in Dateien
+    - 'sed -i "s|image:.*srs-frontend:.*|image: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}|" deploy/frontend-deploy.yaml'
+
+    # 3. Git konfigurieren (wer macht den Commit?)
+    - git config user.email "ci@supplier-rating.app.empa.ch"
+    - git config user.name "CI Pipeline"
+
+    # 4. Änderung committen und pushen
+    - git add deploy/frontend-deploy.yaml
+    - git commit -m "Auto-Update Frontend-Image zu ${CI_COMMIT_SHA}"
+    - git push origin main
   only:
     - main
