@@ -5,7 +5,16 @@
     aria-live="assertive"
     aria-atomic="true">
     <div class="toast-header bg-transparent border-bottom-0">
-      <strong class="me-auto text-danger">Error</strong>
+      <strong
+        class="me-auto"
+        [class.text-success]="type() === 'success'"
+        [class.text-danger]="type() === 'error'">
+        @if (type() === 'success') {
+          Success
+        } @else {
+          Error
+        }
+      </strong>
       <button
         type="button"
         class="btn btn-link p-0 text-decoration-none text-reset"
