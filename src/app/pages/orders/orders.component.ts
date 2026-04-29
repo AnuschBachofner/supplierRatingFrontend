@@ -93,6 +93,11 @@ export class OrdersComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
 
   /**
+   * State: Success message for UI to display (grün)
+   */
+  readonly successMessage = signal<string | null>(null);
+
+  /**
    * Lifecycle hook that is called after the component is initialized.
    */
   ngOnInit() {
@@ -127,6 +132,14 @@ export class OrdersComponent implements OnInit {
    */
   protected closeToast() {
     this.errorMessage.set(null);
+  }
+
+  /**
+   * Closes the success toast message
+   * @protected
+   */
+  protected closeSuccessToast() {
+    this.successMessage.set(null);
   }
 
   /**
@@ -200,7 +213,10 @@ export class OrdersComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          // load whole list new to see the new order
           this.loadOrders();
+          // Show success message
+          this.successMessage.set(`Bestellung "${orderCreate.name}" wurde erfolgreich erstellt.`);
         },
         error: err => {
           console.error('Fehler beim Erstellen:', err); // Zeigt dir den genauen Fehler im Browser
@@ -310,43 +326,42 @@ export class OrdersComponent implements OnInit {
   }
 
   /**
-   * Filters the list of orders based on the current search term
+   * Filters the list of orders based on the current search term and sorts it by rating status and order date.
    * @description Computed Signal: Automatically recalculates the list, if the search term OR the list changes.
    */
   readonly filteredOrders = computed(() => {
     const list = this.orders();
     const term = this.searchTerm().toLowerCase();
 
-    // If no search term is provided, return the full list
-    if (!term) {
-      return list;
-    }
+    // filter list items based on search term - if term is empty, show all (filtered = list)
+    const filtered = term
+      ? list.filter(
+        order =>
+          (order.name || '').toLowerCase().includes(term) ||
+          (order.mainCategory || '').toLowerCase().includes(term) ||
+          (order.subCategory || '').toLowerCase().includes(term) ||
+          (order.details || '').toLowerCase().includes(term) ||
+          (order.contactPerson || '').toLowerCase().includes(term) ||
+          (order.contactEmail || '').toLowerCase().includes(term) ||
+          (order.contactPhone || '').toLowerCase().includes(term) ||
+          (order.orderMethod || '').toLowerCase().includes(term) ||
+          (order.orderComment || '').toLowerCase().includes(term) ||
+          (order.supplierName || '').toLowerCase().includes(term) ||
+          (order.orderedBy || '').toLowerCase().includes(term)
+      )
+      : list;
 
-    // Else filter the list based on the search term
-    return list.filter(
-      order =>
-        // Search by name
-        (order.name || '').toLowerCase().includes(term) ||
-        // Or search by code
-        (order.mainCategory || '').toLowerCase().includes(term) ||
-        // Or search by city
-        (order.subCategory || '').toLowerCase().includes(term) ||
-        // Or search by customerNumber
-        (order.details || '').toLowerCase().includes(term) ||
-        // Or search by street
-        (order.contactPerson || '').toLowerCase().includes(term) ||
-        // Or search by website
-        (order.contactEmail || '').toLowerCase().includes(term) ||
-        // Or search by vatId
-        (order.contactPhone || '').toLowerCase().includes(term) ||
-        // Or search by poBox
-        (order.orderMethod || '').toLowerCase().includes(term) ||
-        // Or search by email
-        (order.orderComment || '').toLowerCase().includes(term) ||
-        // Or search by phoneNumber
-        (order.supplierName || '').toLowerCase().includes(term) ||
-        // Or search by orderedBy
-        (order.orderedBy || '').toLowerCase().includes(term)
-    );
+    // sort list items based on rating status and order date
+    return [...filtered].sort((a, b) => {
+      const ratingDiff = Number(Boolean(a.ratingId)) - Number(Boolean(b.ratingId));
+
+      if (ratingDiff !== 0) {
+        return ratingDiff;
+      }
+
+      const dateA = a.orderDate ? new Date(a.orderDate).getTime() : 0;
+      const dateB = b.orderDate ? new Date(b.orderDate).getTime() : 0;
+      return dateB - dateA;
+    });
   });
 }

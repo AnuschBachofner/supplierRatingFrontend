@@ -95,6 +95,11 @@ export class SuppliersComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
 
   /**
+   * State: Success message for UI to display (grün)
+   */
+  readonly successMessage = signal<string | null>(null);
+
+  /**
    * Lifecycle hook that is called after the component is initialized.
    */
   ngOnInit() {
@@ -128,6 +133,14 @@ export class SuppliersComponent implements OnInit {
    */
   protected closeToast() {
     this.errorMessage.set(null);
+  }
+
+  /**
+   * Closes the success toast message
+   * @protected
+   */
+  protected closeSuccessToast() {
+    this.successMessage.set(null);
   }
 
   /**
@@ -215,10 +228,11 @@ export class SuppliersComponent implements OnInit {
       .createSupplier(formData)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: addedSupplier => {
-          this.suppliers.update(current => [...current, addedSupplier]);
-          // Fetch full details to ensure we have everything needed for display/selection if needed immediately
-          this.selectSupplier(addedSupplier);
+        next: () => {
+          /* loadSuppliers will refresh the whole list, which is simpler than trying to merge the new supplier into the existing list, because the backend might add additional data (like id, timestamps, etc.) that we don't have on the client side. */
+          this.loadSuppliers();
+          // Show success message
+          this.successMessage.set(`Lieferant "${formData.name}" wurde erfolgreich erstellt.`);
         },
         error: () => this.errorMessage.set(`Fehler beim Speichern: ${formData.name}`),
       });
@@ -247,41 +261,47 @@ export class SuppliersComponent implements OnInit {
   }
 
   /**
-   * Filters the list of suppliers based on the current search term
+   * Filters AND sorts the list of suppliers based on the current search term.
    * @description Computed Signal: Automatically recalculates the list, if the search term OR the list changes.
+   * 1. Filter the list of suppliers based on the search term
+   * 2. Sort the filtered list alphabetically by name
    */
   readonly filteredSuppliers = computed(() => {
+    // 1. filter the list of suppliers based on the search term
     const list = this.suppliers();
     const term = this.searchTerm().toLowerCase();
 
-    // If no search term is provided, return the full list
-    if (!term) {
-      return list;
-    }
+    // filter the list of suppliers based on the search term.
+    // We check multiple fields for a match, and if any of them include the search term, we keep that supplier in the list.
+    // if (term) { ... } else { return list; } means: if there is a search term, filter the list, otherwise return the original list without filtering.
+    const filtered = term
+      ? list.filter(
+          supplier =>
+            // Suche im Namen
+            (supplier.name || '').toLowerCase().includes(term) ||
+            // PLZ
+            (supplier.zipCode || '').toLowerCase().includes(term) ||
+            // Stadt
+            (supplier.city || '').toLowerCase().includes(term) ||
+            // Kundennummer
+            (supplier.customerNumber || '').toLowerCase().includes(term) ||
+            // Strasse
+            (supplier.street || '').toLowerCase().includes(term) ||
+            // Webseite
+            (supplier.website || '').toLowerCase().includes(term) ||
+            // Mehrwertsteuer-ID
+            (supplier.vatId || '').toLowerCase().includes(term) ||
+            // Postfach
+            (supplier.poBox || '').toLowerCase().includes(term) ||
+            // E-Mail
+            (supplier.email || '').toLowerCase().includes(term) ||
+            // Telefon
+            (supplier.phoneNumber || '').toLowerCase().includes(term)
+        )
+      : list;
 
-    // Else filter the list based on the search term
-    return list.filter(
-      supplier =>
-        // Search by name
-        (supplier.name || '').toLowerCase().includes(term) ||
-        // Or search by code
-        (supplier.zipCode || '').toLowerCase().includes(term) ||
-        // Or search by city
-        (supplier.city || '').toLowerCase().includes(term) ||
-        // Or search by customerNumber
-        (supplier.customerNumber || '').toLowerCase().includes(term) ||
-        // Or search by street
-        (supplier.street || '').toLowerCase().includes(term) ||
-        // Or search by website
-        (supplier.website || '').toLowerCase().includes(term) ||
-        // Or search by vatId
-        (supplier.vatId || '').toLowerCase().includes(term) ||
-        // Or search by poBox
-        (supplier.poBox || '').toLowerCase().includes(term) ||
-        // Or search by email
-        (supplier.email || '').toLowerCase().includes(term) ||
-        // Or search by phoneNumber
-        (supplier.phoneNumber || '').toLowerCase().includes(term)
-    );
+    // sort the filtered list alphabetically by name. We use localeCompare for proper alphabetical sorting,
+    // and we handle the case where name might be null or undefined by defaulting to an empty string.
+    return [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   });
 }
