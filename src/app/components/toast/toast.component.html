@@ -8,9 +8,12 @@
       <strong
         class="me-auto"
         [class.text-success]="type() === 'success'"
+        [class.text-warning]="type() === 'warning'"
         [class.text-danger]="type() === 'error'">
         @if (type() === 'success') {
           Success
+        } @else if (type() === 'warning') {
+          Achtung
         } @else {
           Error
         }

@@ -1,6 +1,7 @@
 <div class="container-fluid d-flex flex-column p-2 h-100 position-relative">
   <app-toast [message]="errorMessage()" (exitToast)="closeToast()"></app-toast>
   <app-toast type="success" [message]="successMessage()" (exitToast)="closeSuccessToast()" />
+  <app-toast type="warning" [message]="warningMessage()" (exitToast)="closeWarningToast()" />
   <app-list-search class="mb-3" (searchChange)="searchTerm.set($event)"></app-list-search>
   <app-list-item-headers
     [header]="'Bestellname'"

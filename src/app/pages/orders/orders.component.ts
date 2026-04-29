@@ -98,6 +98,11 @@ export class OrdersComponent implements OnInit {
   readonly successMessage = signal<string | null>(null);
 
   /**
+   * State: Warning message for UI to display (gelb)
+   */
+  readonly warningMessage = signal<string | null>(null);
+
+  /**
    * Lifecycle hook that is called after the component is initialized.
    */
   ngOnInit() {
@@ -140,6 +145,14 @@ export class OrdersComponent implements OnInit {
    */
   protected closeSuccessToast() {
     this.successMessage.set(null);
+  }
+
+  /**
+   * Closes the warning toast message
+   * @protected
+   */
+  protected closeWarningToast() {
+    this.warningMessage.set(null);
   }
 
   /**
@@ -279,26 +292,36 @@ export class OrdersComponent implements OnInit {
   }
 
   /**
-   * Opens the rating modal for a specific order, opens by clicking on the button to rate when user wants to rate an order
+   * Opens the rating modal for a specific order, opens by clicking on the button to rate when user wants to rate an order.
+   * Shows a warning that the rating cannot be changed before the rating is submitted.
    * @param id
    * @param orderData
    * @private
    */
   private openRatingModal(id: string, orderData: Partial<OrderDetailDTO>) {
-    const modalRef = this.modalService.open(ModalRatingComponent, this.modalOptions);
+    // Warning message before opening rating modal
+    this.warningMessage.set('Achtung: Nach dem Absenden der Bewertung kann die Bestellung nicht mehr geändert werden.');
 
-    // Wir übergeben die Order-Daten an das Rating-Modal
-    modalRef.componentInstance.order.set(orderData);
+    // Modal opens after a waiting period (1.5 seconds), so that the user has time to read the warning message before the modal appears.
+    setTimeout(() => {
+      const modalRef = this.modalService.open(ModalRatingComponent, this.modalOptions);
+      modalRef.componentInstance.order.set(orderData);
 
-    modalRef.result.then(
-      (ratingResult: RatingCreateDTO) => {
-        if (!ratingResult) return;
-        this.createRatingForOrder(id, ratingResult);
-      },
-      () => {
-        /* dismissed */
-      }
-    );
+      modalRef.result.then(
+        (ratingResult: RatingCreateDTO) => {
+          if (!ratingResult) return;
+          this.createRatingForOrder(id, ratingResult);
+        },
+        () => {
+          /* Modal abgebrochen */
+        }
+      );
+    }, 1500); // 1500ms = 1.5 Sekunden Verzögerung
+
+    // Warning message disappears after 3.5 seconds, so that the user has time to read the warning message before it disappears.
+    setTimeout(() => {
+      this.warningMessage.set(null);
+    }, 3500);
   }
 
   /**
@@ -336,19 +359,19 @@ export class OrdersComponent implements OnInit {
     // filter list items based on search term - if term is empty, show all (filtered = list)
     const filtered = term
       ? list.filter(
-        order =>
-          (order.name || '').toLowerCase().includes(term) ||
-          (order.mainCategory || '').toLowerCase().includes(term) ||
-          (order.subCategory || '').toLowerCase().includes(term) ||
-          (order.details || '').toLowerCase().includes(term) ||
-          (order.contactPerson || '').toLowerCase().includes(term) ||
-          (order.contactEmail || '').toLowerCase().includes(term) ||
-          (order.contactPhone || '').toLowerCase().includes(term) ||
-          (order.orderMethod || '').toLowerCase().includes(term) ||
-          (order.orderComment || '').toLowerCase().includes(term) ||
-          (order.supplierName || '').toLowerCase().includes(term) ||
-          (order.orderedBy || '').toLowerCase().includes(term)
-      )
+          order =>
+            (order.name || '').toLowerCase().includes(term) ||
+            (order.mainCategory || '').toLowerCase().includes(term) ||
+            (order.subCategory || '').toLowerCase().includes(term) ||
+            (order.details || '').toLowerCase().includes(term) ||
+            (order.contactPerson || '').toLowerCase().includes(term) ||
+            (order.contactEmail || '').toLowerCase().includes(term) ||
+            (order.contactPhone || '').toLowerCase().includes(term) ||
+            (order.orderMethod || '').toLowerCase().includes(term) ||
+            (order.orderComment || '').toLowerCase().includes(term) ||
+            (order.supplierName || '').toLowerCase().includes(term) ||
+            (order.orderedBy || '').toLowerCase().includes(term)
+        )
       : list;
 
     // sort list items based on rating status and order date
