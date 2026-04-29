@@ -98,3 +98,9 @@
     width: auto !important;
   }
 }
+
+/* NgbTypeahead dropdown overrides – must be global because the dropdown is rendered outside the component's view encapsulation.*/
+.supplier-search-dropdown.dropdown-menu {
+  max-height: 300px;
+  overflow-y: auto;
+}

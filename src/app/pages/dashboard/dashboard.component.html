@@ -1,6 +1,63 @@
-<div class="container-fluid">
-  <div class="p-4 text-center">
-    <h4>Your dashboard will be here soon!</h4>
-    <p>Come back later...</p>
-  </div>
+<div class="container-fluid d-flex flex-column p-4 h-100">
+
+  <header class="mb-4">
+    <h2 class="mb-1">Lieferantenbewertung – Verlauf</h2>
+    <p class="text-secondary mb-0">Wähle einen Lieferanten, um seinen Bewertungsverlauf zu sehen</p>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <section class="card mb-3">
+    <div class="card-body">
+      <label for="supplier-search" class="form-label">Lieferant</label>
+      <input
+        id="supplier-search"
+        type="text"
+        class="form-control"
+        placeholder="Lieferanten suchen..."
+        [ngModel]="selectedSupplier()"
+        (ngModelChange)="onSupplierSelected($event)"
+        [ngbTypeahead]="search"
+        [resultFormatter]="formatter"
+        [inputFormatter]="formatter"
+        [editable]="false"
+        popupClass="supplier-search-dropdown"
+        (focus)="focus$.next($any($event).target.value)"
+        (click)="click$.next($any($event).target.value)"
+      />
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-body">
+      @if (!selectedSupplier()) {
+        <div class="text-secondary text-center p-5">Wähle einen Lieferanten, um den Verlauf zu sehen.</div>
+      } @else if (isLoadingHistory()) {
+        <div class="text-secondary text-center p-5">
+          <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+          Lade Bewertungen...
+        </div>
+      } @else if (historyPoints().length === 0) {
+        <div class="text-secondary text-center p-5">Keine Bewertungen für diesen Lieferanten vorhanden.</div>
+      } @else {
+        <div class="d-flex justify-content-between align-items-baseline mb-3">
+          <h6 class="mb-0">{{ selectedSupplier()?.name }}</h6>
+          <small class="text-secondary">{{ historyPoints().length }} Bewertung(en)</small>
+        </div>
+        <div class="chart-wrapper">
+          <canvas
+            baseChart
+            [data]="chartData()"
+            [options]="chartOptions()"
+            type="line"
+            role="img"
+            aria-label="Bewertungsverlauf des Lieferanten">
+          </canvas>
+        </div>
+      }
+    </div>
+  </section>
+
 </div>
