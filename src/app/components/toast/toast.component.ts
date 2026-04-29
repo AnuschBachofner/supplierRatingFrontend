@@ -18,7 +18,7 @@ export class ToastComponent {
   // Input: Properties for the toast component. The message to be displayed in the toast. Default is null (no message).
   readonly message = input<string | null>(null);
   // Input: Properties for the toast component. Default type is 'error'.
-  readonly type = input<'error' | 'success'>('error');
+  readonly type = input<'error' | 'success' | 'warning'>('error');
   readonly exitToast = output<void>();
 
   onClose() {

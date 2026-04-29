@@ -1,3 +1,13 @@
 .toast {
   z-index: 1050;
 }
+:host {
+  // Der Toast soll IMMER über allem liegen — auch über Modals.
+  // Bootstrap-Modals haben z-index 1055, wir gehen mit 1090 sicher darüber.
+  // position: fixed sorgt dafür, dass der Toast relativ zum Browserfenster
+  // positioniert ist, nicht zum Eltern-Container.
+  .toast {
+    position: fixed !important;
+    z-index: 1090;
+  }
+}
